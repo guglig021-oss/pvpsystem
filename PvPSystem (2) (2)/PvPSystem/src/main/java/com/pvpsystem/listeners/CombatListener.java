@@ -1,6 +1,7 @@
 package com.pvpsystem.listeners;
 import com.pvpsystem.PvPSystem;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -15,8 +16,14 @@ public class CombatListener implements Listener {
     }
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHit(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player attacker)) return;
         if (!(event.getEntity() instanceof Player victim)) return;
+        Player attacker = null;
+        if (event.getDamager() instanceof Player) {
+            attacker = (Player) event.getDamager();
+        } else if (event.getDamager() instanceof Projectile proj) {
+            if (proj.getShooter() instanceof Player) attacker = (Player) proj.getShooter();
+        }
+        if (attacker == null || attacker.equals(victim)) return;
         if (plugin.getMatchManager().isInMatch(attacker.getUniqueId()) ||
             plugin.getMatchManager().isInMatch(victim.getUniqueId())) return;
         plugin.getCombatManager().tag(attacker);
