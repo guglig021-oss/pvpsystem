@@ -12,9 +12,11 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import java.util.Arrays;
+import java.util.Arrays;
 public class LobbyItemListener implements Listener {
     private final PvPSystem plugin;
     private final QueueSelectorGUI queueSelector;
+    private static final String DISABLED_WORLD = "nexusgens";
     public LobbyItemListener(PvPSystem plugin) {
         this.plugin = plugin;
         this.queueSelector = new QueueSelectorGUI(plugin);
@@ -26,15 +28,27 @@ public class LobbyItemListener implements Listener {
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        if (!plugin.getMatchManager().isInMatch(player.getUniqueId())) {
+        String world = player.getWorld().getName();
+        if (world.equalsIgnoreCase(DISABLED_WORLD)) {
+            removeCompass(player);
+        } else if (!plugin.getMatchManager().isInMatch(player.getUniqueId())) {
             giveLobbyItem(player);
         }
     }
     public void giveLobbyItem(Player player) {
+        if (player.getWorld().getName().equalsIgnoreCase(DISABLED_WORLD)) return;
         for (ItemStack item : player.getInventory().getContents()) {
             if (isQueueCompass(item)) return;
         }
         player.getInventory().setItem(0, createQueueCompass());
+    }
+    private void removeCompass(Player player) {
+        for (int i = 0; i < player.getInventory().getSize(); i++) {
+            ItemStack item = player.getInventory().getItem(i);
+            if (isQueueCompass(item)) {
+                player.getInventory().setItem(i, null);
+            }
+        }
     }
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
