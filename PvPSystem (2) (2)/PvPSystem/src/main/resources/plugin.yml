@@ -1,0 +1,45 @@
+name: PvPSystem
+version: ${project.version}
+main: com.pvpsystem.PvPSystem
+api-version: '1.21'
+description: Full PvP System with RTP, Queue, and 1v1 Arenas
+authors: [YourName]
+
+commands:
+  pvp:
+    description: Main PvP command
+    usage: /pvp
+  rtp:
+    description: Random teleport
+    usage: /rtp
+  queue:
+    description: Join 1v1 queue
+    usage: /queue
+  duel:
+    description: Duel a player
+    usage: /duel <player>
+  arena:
+    description: Arena management
+    usage: /arena <create|delete|list|setspawn1|setspawn2>
+  pvpmenu:
+    description: Open PvP GUI menu
+    usage: /pvpmenu
+
+  queueadmin:
+    description: Manage queues in-game
+    usage: /queueadmin [create|delete|editkit|seticon|toggle|list]
+    permission: pvpsystem.admin
+
+permissions:
+  pvpsystem.admin:
+    description: Admin permissions
+    default: op
+  pvpsystem.rtp:
+    description: Use RTP
+    default: true
+  pvpsystem.queue:
+    description: Join queue
+    default: true
+  pvpsystem.duel:
+    description: Duel players
+    default: true

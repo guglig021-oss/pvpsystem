@@ -1,0 +1,67 @@
+# PvPSystem Configuration
+
+messages:
+  prefix: "&8[&cPvP&8] &r"
+  no-permission: "&cYou don't have permission!"
+  rtp-teleporting: "&aTeleporting you to a random location..."
+  rtp-success: "&aYou have been teleported to &e{x}, {y}, {z}&a!"
+  rtp-cooldown: "&cYou must wait &e{time} seconds &cbefore using RTP again!"
+  queue-joined: "&aYou joined the &e1v1 queue&a! Position: &e{pos}"
+  queue-left: "&cYou left the queue."
+  queue-already: "&cYou are already in the queue!"
+  queue-match-found: "&aMatch found! Teleporting to arena..."
+  duel-sent: "&aDuel request sent to &e{player}&a!"
+  duel-received: "&e{player} &ahas challenged you to a 1v1! Type &e/duel accept &aor &e/duel deny"
+  duel-accepted: "&aDuel accepted! Teleporting to arena..."
+  duel-denied: "&c{player} &cdenied your duel request."
+  duel-expired: "&cYour duel request to &e{player} &chas expired."
+  match-start: "&aMatch starting in &e{time} seconds!"
+  match-end-winner: "&6&lYOU WON! &r&aGG!"
+  match-end-loser: "&cYou lost. Better luck next time!"
+  arena-created: "&aArena &e{name} &acreated!"
+  arena-deleted: "&cArena &e{name} &cdeleted."
+  arena-spawn-set: "&aSpawn &e{num} &aset for arena &e{name}&a!"
+  in-combat: "&cYou are in combat! You cannot do this right now."
+  not-in-match: "&cYou are not in a match!"
+  arena-not-ready: "&cNo arenas are available right now."
+
+rtp:
+  cooldown: 30
+  world: world
+  min-distance: 100
+  max-distance: 5000
+  max-attempts: 20
+  safe-height-check: true
+
+queue:
+  countdown: 5
+  kit-on-start: true
+  restore-inventory: true
+  kit:
+    helmet: DIAMOND_HELMET
+    chestplate: DIAMOND_CHESTPLATE
+    leggings: DIAMOND_LEGGINGS
+    boots: DIAMOND_BOOTS
+    sword: DIAMOND_SWORD
+    items:
+      - GOLDEN_APPLE:2
+      - ENDER_PEARL:4
+
+combat:
+  tag-duration: 15
+  prevent-logout: true
+  prevent-commands:
+    - /rtp
+    - /spawn
+    - /home
+    - /tpa
+
+arena:
+  respawn-world: world
+  respawn-x: 0.0
+  respawn-y: 64.0
+  respawn-z: 0.0
+
+gui:
+  title: "&8&lPvP &cSystem &8Menu"
+  rows: 5
