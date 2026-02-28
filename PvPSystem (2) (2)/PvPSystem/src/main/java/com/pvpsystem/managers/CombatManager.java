@@ -44,7 +44,9 @@ public class CombatManager {
             long remaining = endTime - System.currentTimeMillis();
             if (remaining <= 0) { bar.setProgress(0); bar.setVisible(false); return; }
             bar.setProgress(Math.max(0, Math.min(1, (double) remaining / (duration * 1000L))));
-            bar.setTitle(PvPSystem.colorize("&c⚔ Combat Tagged &7- &e" + (remaining / 1000 + 1) + "s"));
+            int secs = (int)(remaining / 1000) + 1;
+            bar.setTitle(PvPSystem.colorize((secs <= 5 ? "&e" : "&c") + "⚔ Combat Tagged &7- &f" + secs + "s"));
+            bar.setColor(secs <= 5 ? BarColor.YELLOW : BarColor.RED);
         }, 0L, 20L);
         bossBarTasks.put(player.getUniqueId(), barTask);
     }
