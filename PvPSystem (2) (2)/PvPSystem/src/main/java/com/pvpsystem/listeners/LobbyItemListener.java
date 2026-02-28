@@ -12,7 +12,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import java.util.Arrays;
-import java.util.Arrays;
 public class LobbyItemListener implements Listener {
     private final PvPSystem plugin;
     private final QueueSelectorGUI queueSelector;
@@ -28,8 +27,7 @@ public class LobbyItemListener implements Listener {
     @EventHandler
     public void onWorldChange(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
-        String world = player.getWorld().getName();
-        if (world.equalsIgnoreCase(DISABLED_WORLD)) {
+        if (player.getWorld().getName().equalsIgnoreCase(DISABLED_WORLD)) {
             removeCompass(player);
         } else if (!plugin.getMatchManager().isInMatch(player.getUniqueId())) {
             giveLobbyItem(player);
@@ -44,10 +42,8 @@ public class LobbyItemListener implements Listener {
     }
     private void removeCompass(Player player) {
         for (int i = 0; i < player.getInventory().getSize(); i++) {
-            ItemStack item = player.getInventory().getItem(i);
-            if (isQueueCompass(item)) {
+            if (isQueueCompass(player.getInventory().getItem(i)))
                 player.getInventory().setItem(i, null);
-            }
         }
     }
     @EventHandler
@@ -58,7 +54,7 @@ public class LobbyItemListener implements Listener {
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         event.setCancelled(true);
         if (plugin.getCustomQueueManager().getAllQueues().isEmpty()) {
-            player.sendMessage(PvPSystem.colorize("&cNo queues have been created yet! Ask an admin to create one with /queueadmin create"));
+            player.sendMessage(PvPSystem.colorize("&cNo queues yet! Ask an admin to create one with /queueadmin create"));
             return;
         }
         queueSelector.open(player);
@@ -69,11 +65,11 @@ public class LobbyItemListener implements Listener {
         if (meta != null) {
             meta.setDisplayName(PvPSystem.colorize("&6&l⚔ Queue Selector"));
             meta.setLore(Arrays.asList(
-                    PvPSystem.colorize(""),
-                    PvPSystem.colorize("&7Right-click to open"),
-                    PvPSystem.colorize("&7the queue selector GUI!"),
-                    PvPSystem.colorize(""),
-                    PvPSystem.colorize("&8pvpsystem:queue_compass")
+                PvPSystem.colorize(""),
+                PvPSystem.colorize("&7Right-click to open"),
+                PvPSystem.colorize("&7the queue selector GUI!"),
+                PvPSystem.colorize(""),
+                PvPSystem.colorize("&8pvpsystem:queue_compass")
             ));
             compass.setItemMeta(meta);
         }
