@@ -71,7 +71,9 @@ public class KitManager {
     }
     public void selectKit(UUID uuid, String kitId) { selectedKits.put(uuid, kitId); }
     public String getSelectedKit(UUID uuid) { return selectedKits.getOrDefault(uuid, "diamond"); }
-    public void applyKit(Player player) {
+    public void giveKit(Player player) {
+        applyKit(player);
+    }
         String kitId = getSelectedKit(player.getUniqueId());
         Kit kit = getKit(kitId);
         if (kit == null) return;
