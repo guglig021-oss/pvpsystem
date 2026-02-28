@@ -1,101 +1,145 @@
 package com.pvpsystem.managers;
+
 import com.pvpsystem.PvPSystem;
+import com.pvpsystem.arena.Arena;
 import org.bukkit.Bukkit;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-public class CombatManager {
+
+import java.util.*;
+
+public class MatchManager {
+
     private final PvPSystem plugin;
-    private final Map<UUID, BukkitTask> combatTasks = new HashMap<>();
-    private final Map<UUID, Long> combatTime = new HashMap<>();
-    private final Map<UUID, BossBar> bossBars = new HashMap<>();
-    private final Map<UUID, BukkitTask> bossBarTasks = new HashMap<>();
-    public CombatManager(PvPSystem plugin) {
+    private final Map<UUID, Match> playerMatches = new HashMap<>();
+    private final Map<Match, BukkitTask> countdownTasks = new HashMap<>();
+
+    public MatchManager(PvPSystem plugin) {
         this.plugin = plugin;
     }
-    public void tag(Player player) {
-        int duration = plugin.getConfig().getInt("combat.tag-duration", 15);
-        if (combatTasks.containsKey(player.getUniqueId())) {
-            combatTasks.get(player.getUniqueId()).cancel();
+
+    public void startMatchWithPersonalKits(Player p1, Player p2,
+                                            ItemStack[] kit1, ItemStack[] armor1,
+                                            ItemStack[] kit2, ItemStack[] armor2) {
+        Arena arena = plugin.getArenaManager().getAvailableArena();
+        if (arena == null) {
+            p1.sendMessage(plugin.msg("arena-not-ready"));
+            p2.sendMessage(plugin.msg("arena-not-ready"));
+            return;
         }
-        combatTime.put(player.getUniqueId(), System.currentTimeMillis());
-        showBossBar(player, duration);
-        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            untag(player);
-        }, duration * 20L);
-        combatTasks.put(player.getUniqueId(), task);
-    }
-    private void showBossBar(Player player, int duration) {
-        if (bossBarTasks.containsKey(player.getUniqueId())) {
-            bossBarTasks.get(player.getUniqueId()).cancel();
+        arena.setInUse(true);
+        Match match = new Match(p1.getUniqueId(), p2.getUniqueId(), arena);
+        if (plugin.getConfig().getBoolean("queue.restore-inventory", true)) {
+            match.saveInventory(p1, p1.getInventory().getContents().clone(), p1.getInventory().getArmorContents().clone());
+            match.saveInventory(p2, p2.getInventory().getContents().clone(), p2.getInventory().getArmorContents().clone());
         }
-        BossBar bar = bossBars.computeIfAbsent(player.getUniqueId(), k -> {
-            BossBar newBar = Bukkit.createBossBar(
-                PvPSystem.colorize("&c⚔ Combat Tagged"),
-                BarColor.RED,
-                BarStyle.SOLID
-            );
-            newBar.addPlayer(player);
-            return newBar;
-        });
-        bar.setVisible(true);
-        bar.setProgress(1.0);
-        final long endTime = System.currentTimeMillis() + (duration * 1000L);
-        BukkitTask barTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            long remaining = endTime - System.currentTimeMillis();
-            if (remaining <= 0) {
-                bar.setProgress(0);
-                bar.setVisible(false);
-                return;
+        playerMatches.put(p1.getUniqueId(), match);
+        playerMatches.put(p2.getUniqueId(), match);
+
+        p1.getInventory().clear();
+        if (kit1 != null) p1.getInventory().setContents(kit1);
+        if (armor1 != null) p1.getInventory().setArmorContents(armor1);
+        p1.setHealth(p1.getMaxHealth()); p1.setFoodLevel(20);
+
+        p2.getInventory().clear();
+        if (kit2 != null) p2.getInventory().setContents(kit2);
+        if (armor2 != null) p2.getInventory().setArmorContents(armor2);
+        p2.setHealth(p2.getMaxHealth()); p2.setFoodLevel(20);
+
+        p1.teleport(arena.getSpawn1()); p2.teleport(arena.getSpawn2());
+        p1.setWalkSpeed(0f); p2.setWalkSpeed(0f);
+
+        int countdownSec = plugin.getConfig().getInt("queue.countdown", 5);
+        p1.sendMessage(plugin.msg("match-start").replace("{time}", String.valueOf(countdownSec)));
+        p2.sendMessage(plugin.msg("match-start").replace("{time}", String.valueOf(countdownSec)));
+
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+            int seconds = countdownSec;
+            @Override
+            public void run() {
+                if (!p1.isOnline() || !p2.isOnline()) {
+                    if (p1.isOnline()) endMatch(match, p1.getUniqueId());
+                    else if (p2.isOnline()) endMatch(match, p2.getUniqueId());
+                    return;
+                }
+                if (seconds > 0) {
+                    String m = PvPSystem.colorize("&e&lMatch starts in &c&l" + seconds + "s!");
+                    p1.sendMessage(m); p2.sendMessage(m);
+                    p1.sendTitle(PvPSystem.colorize("&c&l" + seconds), PvPSystem.colorize("&eGet ready!"), 5, 20, 5);
+                    p2.sendTitle(PvPSystem.colorize("&c&l" + seconds), PvPSystem.colorize("&eGet ready!"), 5, 20, 5);
+                    seconds--;
+                } else {
+                    match.setState(Match.State.ACTIVE);
+                    p1.setWalkSpeed(0.2f); p2.setWalkSpeed(0.2f);
+                    p1.sendTitle(PvPSystem.colorize("&a&lFIGHT!"), PvPSystem.colorize("&eGood luck!"), 5, 30, 5);
+                    p2.sendTitle(PvPSystem.colorize("&a&lFIGHT!"), PvPSystem.colorize("&eGood luck!"), 5, 30, 5);
+                    countdownTasks.get(match).cancel(); countdownTasks.remove(match);
+                }
             }
-            double progress = (double) remaining / (duration * 1000L);
-            bar.setProgress(Math.max(0, Math.min(1, progress)));
-            bar.setTitle(PvPSystem.colorize("&c⚔ Combat Tagged &7- &e" + (remaining / 1000 + 1) + "s"));
         }, 0L, 20L);
-        bossBarTasks.put(player.getUniqueId(), barTask);
+        countdownTasks.put(match, task);
     }
-    public void untag(Player player) {
-        if (!isInCombat(player.getUniqueId())) return;
-        combatTime.remove(player.getUniqueId());
-        if (combatTasks.containsKey(player.getUniqueId())) {
-            combatTasks.get(player.getUniqueId()).cancel();
-            combatTasks.remove(player.getUniqueId());
+
+    public void startMatchWithKit(Player p1, Player p2, ItemStack[] kitContents, ItemStack[] kitArmor) {
+        Arena arena = plugin.getArenaManager().getAvailableArena();
+        if (arena == null) {
+            p1.sendMessage(plugin.msg("arena-not-ready"));
+            p2.sendMessage(plugin.msg("arena-not-ready"));
+            return;
         }
-        if (bossBarTasks.containsKey(player.getUniqueId())) {
-            bossBarTasks.get(player.getUniqueId()).cancel();
-            bossBarTasks.remove(player.getUniqueId());
+        arena.setInUse(true);
+        Match match = new Match(p1.getUniqueId(), p2.getUniqueId(), arena);
+        if (plugin.getConfig().getBoolean("queue.restore-inventory", true)) {
+            match.saveInventory(p1, p1.getInventory().getContents().clone(), p1.getInventory().getArmorContents().clone());
+            match.saveInventory(p2, p2.getInventory().getContents().clone(), p2.getInventory().getArmorContents().clone());
         }
-        if (bossBars.containsKey(player.getUniqueId())) {
-            bossBars.get(player.getUniqueId()).setVisible(false);
+        playerMatches.put(p1.getUniqueId(), match);
+        playerMatches.put(p2.getUniqueId(), match);
+        for (Player p : new Player[]{p1, p2}) {
+            p.getInventory().clear();
+            if (kitContents != null) p.getInventory().setContents(kitContents);
+            if (kitArmor != null) p.getInventory().setArmorContents(kitArmor);
+            p.setHealth(p.getMaxHealth());
+            p.setFoodLevel(20);
         }
+        p1.teleport(arena.getSpawn1());
+        p2.teleport(arena.getSpawn2());
+        p1.setWalkSpeed(0f);
+        p2.setWalkSpeed(0f);
+        int countdownSec = plugin.getConfig().getInt("queue.countdown", 5);
+        p1.sendMessage(plugin.msg("match-start").replace("{time}", String.valueOf(countdownSec)));
+        p2.sendMessage(plugin.msg("match-start").replace("{time}", String.valueOf(countdownSec)));
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+            int seconds = countdownSec;
+            @Override
+            public void run() {
+                if (!p1.isOnline() || !p2.isOnline()) {
+                    if (p1.isOnline()) endMatch(match, p1.getUniqueId());
+                    else if (p2.isOnline()) endMatch(match, p2.getUniqueId());
+                    return;
+                }
+                if (seconds > 0) {
+                    String countMsg = PvPSystem.colorize("&e&lMatch starts in &c&l" + seconds + " &e&lseconds!");
+                    p1.sendMessage(countMsg); p2.sendMessage(countMsg);
+                    p1.sendTitle(PvPSystem.colorize("&c&l" + seconds), PvPSystem.colorize("&eGet ready!"), 5, 20, 5);
+                    p2.sendTitle(PvPSystem.colorize("&c&l" + seconds), PvPSystem.colorize("&eGet ready!"), 5, 20, 5);
+                    seconds--;
+                } else {
+                    match.setState(Match.State.ACTIVE);
+                    p1.setWalkSpeed(0.2f); p2.setWalkSpeed(0.2f);
+                    p1.sendTitle(PvPSystem.colorize("&a&lFIGHT!"), PvPSystem.colorize("&eGood luck!"), 5, 30, 5);
+                    p2.sendTitle(PvPSystem.colorize("&a&lFIGHT!"), PvPSystem.colorize("&eGood luck!"), 5, 30, 5);
+                    countdownTasks.get(match).cancel();
+                    countdownTasks.remove(match);
+                }
+            }
+        }, 0L, 20L);
+        countdownTasks.put(match, task);
     }
-    public void removePlayer(UUID uuid) {
-        if (combatTasks.containsKey(uuid)) {
-            combatTasks.get(uuid).cancel();
-            combatTasks.remove(uuid);
-        }
-        if (bossBarTasks.containsKey(uuid)) {
-            bossBarTasks.get(uuid).cancel();
-            bossBarTasks.remove(uuid);
-        }
-        if (bossBars.containsKey(uuid)) {
-            bossBars.get(uuid).setVisible(false);
-            bossBars.remove(uuid);
-        }
-        combatTime.remove(uuid);
-    }
-    public boolean isInCombat(UUID uuid) {
-        return combatTime.containsKey(uuid);
-    }
-    public long getRemainingCombat(UUID uuid) {
-        if (!isInCombat(uuid)) return 0;
-        int duration = plugin.getConfig().getInt("combat.tag-duration", 15);
-        long elapsed = (System.currentTimeMillis() - combatTime.get(uuid)) / 1000;
-        return Math.max(0, duration - elapsed);
-    }
-}
+
+    public void startMatch(Player p1, Player p2) {
+        Arena arena = plugin.getArenaManager().getAvailableArena();
+        if (arena == null) {
+            p1.sendMessage(plugin.msg("a
