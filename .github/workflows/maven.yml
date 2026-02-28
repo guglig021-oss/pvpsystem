@@ -15,7 +15,7 @@ jobs:
       - name: Build with Maven
         run: mvn -f "PvPSystem (2) (2)/PvPSystem/pom.xml" clean package
       - name: Upload JAR
-        uses: uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4
         with:
           name: PvPSystem
           path: "PvPSystem (2) (2)/PvPSystem/target/PvPSystem-1.0.0.jar"
