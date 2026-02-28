@@ -1,5 +1,4 @@
 package com.pvpsystem.listeners;
-
 import com.pvpsystem.PvPSystem;
 import com.pvpsystem.gui.QueueSelectorGUI;
 import org.bukkit.Material;
@@ -7,55 +6,49 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
 import java.util.Arrays;
-
 public class LobbyItemListener implements Listener {
-
     private final PvPSystem plugin;
     private final QueueSelectorGUI queueSelector;
-
     public LobbyItemListener(PvPSystem plugin) {
         this.plugin = plugin;
         this.queueSelector = new QueueSelectorGUI(plugin);
     }
-
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         giveLobbyItem(event.getPlayer());
     }
-
+    @EventHandler
+    public void onWorldChange(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        if (!plugin.getMatchManager().isInMatch(player.getUniqueId())) {
+            giveLobbyItem(player);
+        }
+    }
     public void giveLobbyItem(Player player) {
-        // Check if they already have the compass
         for (ItemStack item : player.getInventory().getContents()) {
             if (isQueueCompass(item)) return;
         }
         player.getInventory().setItem(0, createQueueCompass());
-        player.sendMessage(PvPSystem.colorize("&8[&cPvP&8] &eRight-click the &6compass &eto open the queue selector!"));
     }
-
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-
         if (item == null || !isQueueCompass(item)) return;
         if (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-
         event.setCancelled(true);
-
         if (plugin.getCustomQueueManager().getAllQueues().isEmpty()) {
             player.sendMessage(PvPSystem.colorize("&cNo queues have been created yet! Ask an admin to create one with /queueadmin create"));
             return;
         }
-
         queueSelector.open(player);
     }
-
     private ItemStack createQueueCompass() {
         ItemStack compass = new ItemStack(Material.COMPASS);
         ItemMeta meta = compass.getItemMeta();
@@ -72,7 +65,6 @@ public class LobbyItemListener implements Listener {
         }
         return compass;
     }
-
     private boolean isQueueCompass(ItemStack item) {
         if (item == null || item.getType() != Material.COMPASS) return false;
         if (!item.hasItemMeta() || item.getItemMeta() == null) return false;
