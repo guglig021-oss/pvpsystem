@@ -17,7 +17,7 @@ public class CombatListener implements Listener {
     public void onHit(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player attacker)) return;
         if (!(event.getEntity() instanceof Player victim)) return;
-        if (plugin.getMatchManager().isInMatch(attacker.getUniqueId()) || 
+        if (plugin.getMatchManager().isInMatch(attacker.getUniqueId()) ||
             plugin.getMatchManager().isInMatch(victim.getUniqueId())) return;
         plugin.getCombatManager().tag(attacker);
         plugin.getCombatManager().tag(victim);
