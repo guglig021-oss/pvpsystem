@@ -25,8 +25,7 @@ public class KitManager {
             enchanted(Material.DIAMOND_CHESTPLATE, Map.of(Enchantment.PROTECTION, 2)),
             enchanted(Material.DIAMOND_HELMET, Map.of(Enchantment.PROTECTION, 2))
         };
-        kits.add(new Kit("diamond", "&b&lDiamond Kit", Material.DIAMOND_SWORD,
-                "Classic diamond kit.", diamondContents, diamondArmor));
+        kits.add(new Kit("diamond", "&b&lDiamond Kit", Material.DIAMOND_SWORD, "Classic diamond kit.", diamondContents, diamondArmor));
         ItemStack[] tankContents = new ItemStack[36];
         tankContents[0] = enchanted(Material.IRON_SWORD, Map.of(Enchantment.SHARPNESS, 2, Enchantment.KNOCKBACK, 2));
         tankContents[1] = new ItemStack(Material.GOLDEN_APPLE, 6);
@@ -37,8 +36,7 @@ public class KitManager {
             enchanted(Material.NETHERITE_CHESTPLATE, Map.of(Enchantment.PROTECTION, 3)),
             enchanted(Material.NETHERITE_HELMET, Map.of(Enchantment.PROTECTION, 3))
         };
-        kits.add(new Kit("tank", "&a&lTank Kit", Material.NETHERITE_CHESTPLATE,
-                "Heavy armor kit.", tankContents, tankArmor));
+        kits.add(new Kit("tank", "&a&lTank Kit", Material.NETHERITE_CHESTPLATE, "Heavy armor kit.", tankContents, tankArmor));
         ItemStack[] speedContents = new ItemStack[36];
         speedContents[0] = enchanted(Material.DIAMOND_SWORD, Map.of(Enchantment.SHARPNESS, 4));
         speedContents[1] = new ItemStack(Material.GOLDEN_APPLE, 2);
@@ -49,8 +47,7 @@ public class KitManager {
             enchanted(Material.CHAINMAIL_CHESTPLATE, Map.of(Enchantment.PROTECTION, 1)),
             enchanted(Material.CHAINMAIL_HELMET, Map.of(Enchantment.PROTECTION, 1))
         };
-        kits.add(new Kit("speed", "&e&lSpeed Kit", Material.SUGAR,
-                "Fast playstyle kit.", speedContents, speedArmor));
+        kits.add(new Kit("speed", "&e&lSpeed Kit", Material.SUGAR, "Fast playstyle kit.", speedContents, speedArmor));
         ItemStack[] archerContents = new ItemStack[36];
         archerContents[0] = enchanted(Material.BOW, Map.of(Enchantment.POWER, 3, Enchantment.PUNCH, 1));
         archerContents[1] = new ItemStack(Material.ARROW, 32);
@@ -62,8 +59,7 @@ public class KitManager {
             enchanted(Material.LEATHER_CHESTPLATE, Map.of(Enchantment.PROTECTION, 1)),
             enchanted(Material.LEATHER_HELMET, Map.of(Enchantment.PROTECTION, 1))
         };
-        kits.add(new Kit("archer", "&6&lArcher Kit", Material.BOW,
-                "Ranged combat kit.", archerContents, archerArmor));
+        kits.add(new Kit("archer", "&6&lArcher Kit", Material.BOW, "Ranged combat kit.", archerContents, archerArmor));
     }
     public List<Kit> getKits() { return kits; }
     public Kit getKit(String id) {
@@ -74,6 +70,7 @@ public class KitManager {
     public void giveKit(Player player) {
         applyKit(player);
     }
+    public void applyKit(Player player) {
         String kitId = getSelectedKit(player.getUniqueId());
         Kit kit = getKit(kitId);
         if (kit == null) return;
