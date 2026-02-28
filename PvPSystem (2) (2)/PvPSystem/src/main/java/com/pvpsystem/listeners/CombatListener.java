@@ -1,5 +1,4 @@
 package com.pvpsystem.listeners;
-
 import com.pvpsystem.PvPSystem;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -7,35 +6,28 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-
+import org.bukkit.event.player.PlayerQuitEvent;
 import java.util.List;
-
 public class CombatListener implements Listener {
-
     private final PvPSystem plugin;
-
     public CombatListener(PvPSystem plugin) {
         this.plugin = plugin;
     }
-
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onHit(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player attacker)) return;
         if (!(event.getEntity() instanceof Player victim)) return;
-
-        // Tag both players
+        if (plugin.getMatchManager().isInMatch(attacker.getUniqueId()) || 
+            plugin.getMatchManager().isInMatch(victim.getUniqueId())) return;
         plugin.getCombatManager().tag(attacker);
         plugin.getCombatManager().tag(victim);
     }
-
     @EventHandler(priority = EventPriority.HIGH)
     public void onCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         if (!plugin.getCombatManager().isInCombat(player.getUniqueId())) return;
-
         List<String> blockedCommands = plugin.getConfig().getStringList("combat.prevent-commands");
         String cmd = event.getMessage().toLowerCase().split(" ")[0];
-
         for (String blocked : blockedCommands) {
             if (cmd.equalsIgnoreCase(blocked.toLowerCase())) {
                 event.setCancelled(true);
@@ -43,5 +35,9 @@ public class CombatListener implements Listener {
                 return;
             }
         }
+    }
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        plugin.getCombatManager().removePlayer(event.getPlayer().getUniqueId());
     }
 }
